@@ -24,9 +24,8 @@ namespace Translation_Matrix
 
         List<Rectangle> barriers;
 
+        Vector2 cameraPosition;
         Matrix cameraTransform;
-
-        Vector2 offset, cameraPosition;
 
         public Game1()
         {
@@ -44,7 +43,7 @@ namespace Translation_Matrix
             _graphics.PreferredBackBufferHeight = window.Height;
             _graphics.ApplyChanges();
 
-            doraRectangle = new Rectangle(200, 350, 20, 40);
+            doraRectangle = new Rectangle(450, 350, 20, 40);
             waldoRect = new Rectangle(1170, 445, 30, 65);
             barriers = new List<Rectangle>();
             barriers.Add(new Rectangle(0, 0, 1920,330));    // This will keep our player out of the water
@@ -68,7 +67,6 @@ namespace Translation_Matrix
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-
             // TODO: Add your update logic here
             keyboardState = Keyboard.GetState();
             mouseState = Mouse.GetState();
@@ -87,6 +85,8 @@ namespace Translation_Matrix
 
             doraRectangle.Offset(doraSpeed);
 
+            SetCamera();
+
             base.Update(gameTime);
         }
 
@@ -95,12 +95,19 @@ namespace Translation_Matrix
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
             // TODO: Add your drawing code here
-            _spriteBatch.Begin();
+            _spriteBatch.Begin(transformMatrix: cameraTransform);
             _spriteBatch.Draw(backgroundTexture, worldRect,  Color.White);
             _spriteBatch.Draw(doraTexture, doraRectangle, Color.White);
             _spriteBatch.End();
 
             base.Draw(gameTime);
+        }
+        public void SetCamera()
+        {
+            // Calculates the offset between out players position and the center of the game window
+            cameraPosition = doraRectangle.Center.ToVector2() - window.Center.ToVector2();
+            // Uses this offset to create a translation matrix that can be applied when we draw our world.
+            cameraTransform = Matrix.CreateTranslation(new Vector3(-cameraPosition, 0f));
         }
     }
 }
