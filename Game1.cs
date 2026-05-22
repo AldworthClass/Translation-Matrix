@@ -12,6 +12,7 @@ namespace Translation_Matrix
 
         KeyboardState keyboardState;
         MouseState mouseState;
+        Vector2 mouseWorldPosition;
 
         Rectangle window, worldRect;
         Texture2D backgroundTexture;
@@ -46,7 +47,7 @@ namespace Translation_Matrix
             doraRectangle = new Rectangle(450, 350, 20, 40);
             waldoRect = new Rectangle(1170, 445, 30, 65);
             barriers = new List<Rectangle>();
-            barriers.Add(new Rectangle(0, 0, 1920,330));    // This will keep our player out of the water
+            barriers.Add(new Rectangle(0, 0, worldRect.Width,320));    // This will keep our player out of the water
 
             base.Initialize();
         }
@@ -71,6 +72,9 @@ namespace Translation_Matrix
             keyboardState = Keyboard.GetState();
             mouseState = Mouse.GetState();
 
+            Matrix inverseTransform = Matrix.Invert(cameraTransform);
+            mouseWorldPosition = Vector2.Transform(mouseState.Position.ToVector2(), inverseTransform);
+
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
             doraSpeed = Vector2.Zero;
@@ -84,6 +88,13 @@ namespace Translation_Matrix
                 doraSpeed.X += 2;
 
             doraRectangle.Offset(doraSpeed);
+
+            foreach (Rectangle barrier in barriers)
+                if (barrier.Intersects(doraRectangle))
+                    doraRectangle.Offset(-doraSpeed);
+
+            if (waldoRect.Contains(mouseWorldPosition.ToPoint()) && mouseState.LeftButton == ButtonState.Pressed)
+                Exit();
 
             SetCamera();
 
@@ -106,6 +117,13 @@ namespace Translation_Matrix
         {
             // Calculates the offset between out players position and the center of the game window
             cameraPosition = doraRectangle.Center.ToVector2() - window.Center.ToVector2();
+
+            // Clamp the camera position to the world size
+            float maxX = worldRect.Width - window.Width;
+            float maxY = worldRect.Height - window.Height;
+            cameraPosition.X = MathHelper.Clamp(cameraPosition.X, 0, maxX);
+            cameraPosition.Y = MathHelper.Clamp(cameraPosition.Y, 0, maxY);
+
             // Uses this offset to create a translation matrix that can be applied when we draw our world.
             cameraTransform = Matrix.CreateTranslation(new Vector3(-cameraPosition, 0f));
         }
