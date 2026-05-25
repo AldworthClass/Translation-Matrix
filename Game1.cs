@@ -28,6 +28,12 @@ namespace Translation_Matrix
         Vector2 cameraPosition;
         Matrix cameraTransform;
 
+        // This will define the distance the player needs to get to the edge of the 
+        // screen before we start moving the camera
+        float paddingX; 
+        float paddingY; 
+
+
         public Game1()
         {
             _graphics = new GraphicsDeviceManager(this);
@@ -44,10 +50,15 @@ namespace Translation_Matrix
             _graphics.PreferredBackBufferHeight = window.Height;
             _graphics.ApplyChanges();
 
+            paddingX = 200f; // how far from left/right before camera moves
+            paddingY = 150f;
+
             doraRectangle = new Rectangle(450, 350, 20, 40);
             waldoRect = new Rectangle(1170, 445, 30, 65);
             barriers = new List<Rectangle>();
             barriers.Add(new Rectangle(0, 0, worldRect.Width,320));    // This will keep our player out of the water
+
+            //cameraPosition = doraRectangle.Center.ToVector2();
 
             base.Initialize();
         }
@@ -96,7 +107,7 @@ namespace Translation_Matrix
             if (waldoRect.Contains(mouseWorldPosition.ToPoint()) && mouseState.LeftButton == ButtonState.Pressed)
                 Exit();
 
-            SetCamera();
+            SetCameraPadding();
 
             base.Update(gameTime);
         }
@@ -113,11 +124,12 @@ namespace Translation_Matrix
 
             base.Draw(gameTime);
         }
+
         public void SetCamera()
         {
             // Calculates the offset between out players position and the center of the game window
             cameraPosition = doraRectangle.Center.ToVector2() - window.Center.ToVector2();
-
+            
             // Clamp the camera position to the world size
             float maxX = worldRect.Width - window.Width;
             float maxY = worldRect.Height - window.Height;
@@ -126,6 +138,49 @@ namespace Translation_Matrix
 
             // Uses this offset to create a translation matrix that can be applied when we draw our world.
             cameraTransform = Matrix.CreateTranslation(new Vector3(-cameraPosition, 0f));
+
+
+
+        }
+        public void SetCameraPadding()
+        {
+            // Calculates the offset between out players position and the center of the game window
+            // cameraPosition = doraRectangle.Center.ToVector2() - window.Center.ToVector2();
+
+            
+
+            // Calculate dead zone boundaries
+            float left = cameraPosition.X - window.Width / 2 + paddingX;
+            float right = cameraPosition.X + window.Width / 2 - paddingX;
+            float top = cameraPosition.Y - window.Height / 2 + paddingY;
+            float bottom = cameraPosition.Y + window.Height / 2 - paddingY;
+
+            // Adjust camera only if player leaves zone
+            if (doraRectangle.X < left)
+                cameraPosition.X = doraRectangle.X + window.Width / 2 - paddingX;
+            else if (doraRectangle.X > right)
+                cameraPosition.X = doraRectangle.X - window.Width / 2 + paddingX;
+
+            if (doraRectangle.Y < top)
+                cameraPosition.Y = doraRectangle.Y + window.Height / 2 - paddingY;
+            else if (doraRectangle.Y > bottom)
+                cameraPosition.Y = doraRectangle.Y - window.Height / 2 + paddingY;
+
+
+            // Clamp the camera position to the world size
+            float maxX = worldRect.Width - window.Width / 2;
+            float maxY = worldRect.Height - window.Height / 2;
+
+            cameraPosition.X = MathHelper.Clamp(cameraPosition.X, window.Width / 2, maxX);
+            cameraPosition.Y = MathHelper.Clamp(cameraPosition.Y, window.Height / 2, maxY);
+
+            // Uses this offset to create a translation matrix that can be applied when we draw our world.
+            // cameraTransform = Matrix.CreateTranslation(new Vector3(-cameraPosition, 0f));
+
+            cameraTransform = Matrix.CreateTranslation(new Vector3(-cameraPosition, 0)) *
+                Matrix.CreateTranslation(new Vector3(window.Width / 2f, window.Height / 2f, 0));
+
+
         }
     }
 }
