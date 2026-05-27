@@ -25,6 +25,13 @@
 /processorParam:TextureFormat=Color
 /build:Dora.png
 
+#begin InstructionFont.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:InstructionFont.spritefont
+
 #begin Waldo.jpg
 /importer:TextureImporter
 /processor:TextureProcessor

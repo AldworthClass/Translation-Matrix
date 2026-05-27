@@ -31,8 +31,9 @@ namespace Translation_Matrix
         // This will define the distance the player needs to get to the edge of the 
         // screen before we start moving the camera
         float paddingX; 
-        float paddingY; 
+        float paddingY;
 
+        SpriteFont instructionFont;
 
         public Game1()
         {
@@ -43,9 +44,12 @@ namespace Translation_Matrix
 
         protected override void Initialize()
         {
-            // TODO: Add your initialization logic here
-            window = new Rectangle(0, 0, 800, 600);
+            
+            // World Size
             worldRect = new Rectangle(0, 0, 1920, 1233);
+
+            //Window Size
+            window = new Rectangle(0, 0, 800, 600);
             _graphics.PreferredBackBufferWidth = window.Width;
             _graphics.PreferredBackBufferHeight = window.Height;
             _graphics.ApplyChanges();
@@ -70,6 +74,7 @@ namespace Translation_Matrix
             // TODO: use this.Content to load your game content here
             backgroundTexture = Content.Load<Texture2D>("Waldo");
             doraTexture = Content.Load<Texture2D>("Dora");
+            instructionFont = Content.Load<SpriteFont>("InstructionFont");
             
         
         }
@@ -83,6 +88,7 @@ namespace Translation_Matrix
             keyboardState = Keyboard.GetState();
             mouseState = Mouse.GetState();
 
+            // Converts mouse position from window location to world location
             Matrix inverseTransform = Matrix.Invert(cameraTransform);
             mouseWorldPosition = Vector2.Transform(mouseState.Position.ToVector2(), inverseTransform);
 
@@ -100,6 +106,7 @@ namespace Translation_Matrix
 
             doraRectangle.Offset(doraSpeed);
 
+            // Barrier collision
             foreach (Rectangle barrier in barriers)
                 if (barrier.Intersects(doraRectangle))
                     doraRectangle.Offset(-doraSpeed);
@@ -107,7 +114,9 @@ namespace Translation_Matrix
             if (waldoRect.Contains(mouseWorldPosition.ToPoint()) && mouseState.LeftButton == ButtonState.Pressed)
                 Exit();
 
+            // Updates the Transformation Matrix relative to the players updated position
             SetCameraPadding();
+            //SetCamera();
 
             base.Update(gameTime);
         }
@@ -117,10 +126,18 @@ namespace Translation_Matrix
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
             // TODO: Add your drawing code here
+
+            // Draws the game from the cameras perspective
             _spriteBatch.Begin(transformMatrix: cameraTransform);
             _spriteBatch.Draw(backgroundTexture, worldRect,  Color.White);
             _spriteBatch.Draw(doraTexture, doraRectangle, Color.White);
             _spriteBatch.End();
+
+            // Draws Instructions normally
+            _spriteBatch.Begin();
+            _spriteBatch.DrawString(instructionFont, "Click on Waldo!", new Vector2(10, 10), Color.Black);
+            _spriteBatch.End();
+
 
             base.Draw(gameTime);
         }
@@ -138,24 +155,16 @@ namespace Translation_Matrix
 
             // Uses this offset to create a translation matrix that can be applied when we draw our world.
             cameraTransform = Matrix.CreateTranslation(new Vector3(-cameraPosition, 0f));
-
-
-
         }
         public void SetCameraPadding()
         {
-            // Calculates the offset between out players position and the center of the game window
-            // cameraPosition = doraRectangle.Center.ToVector2() - window.Center.ToVector2();
-
-            
-
             // Calculate dead zone boundaries
             float left = cameraPosition.X - window.Width / 2 + paddingX;
             float right = cameraPosition.X + window.Width / 2 - paddingX;
             float top = cameraPosition.Y - window.Height / 2 + paddingY;
             float bottom = cameraPosition.Y + window.Height / 2 - paddingY;
 
-            // Adjust camera only if player leaves zone
+            // Adjust camera only when player leaves the dead zone
             if (doraRectangle.X < left)
                 cameraPosition.X = doraRectangle.X + window.Width / 2 - paddingX;
             else if (doraRectangle.X > right)
@@ -174,9 +183,7 @@ namespace Translation_Matrix
             cameraPosition.X = MathHelper.Clamp(cameraPosition.X, window.Width / 2, maxX);
             cameraPosition.Y = MathHelper.Clamp(cameraPosition.Y, window.Height / 2, maxY);
 
-            // Uses this offset to create a translation matrix that can be applied when we draw our world.
-            // cameraTransform = Matrix.CreateTranslation(new Vector3(-cameraPosition, 0f));
-
+            // First Transformation Follows the player, the second centers screen
             cameraTransform = Matrix.CreateTranslation(new Vector3(-cameraPosition, 0)) *
                 Matrix.CreateTranslation(new Vector3(window.Width / 2f, window.Height / 2f, 0));
 
