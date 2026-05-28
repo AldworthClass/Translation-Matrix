@@ -106,6 +106,10 @@ namespace Translation_Matrix
 
             doraRectangle.Offset(doraSpeed);
 
+            // Keep Dora in the world
+            if (!worldRect.Contains(doraRectangle))
+                doraRectangle.Offset(-doraSpeed);
+
             // Barrier collision
             foreach (Rectangle barrier in barriers)
                 if (barrier.Intersects(doraRectangle))
@@ -142,6 +146,8 @@ namespace Translation_Matrix
             base.Draw(gameTime);
         }
 
+
+        // Centers the camera on the player at all times
         public void SetCamera()
         {
             // Calculates the offset between out players position and the center of the game window
@@ -156,6 +162,8 @@ namespace Translation_Matrix
             // Uses this offset to create a translation matrix that can be applied when we draw our world.
             cameraTransform = Matrix.CreateTranslation(new Vector3(-cameraPosition, 0f));
         }
+
+        // Sets the camera on the player, but adds a padding so the camera only moves when the player gets near the edge of the screen
         public void SetCameraPadding()
         {
             // Calculate dead zone boundaries
